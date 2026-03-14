@@ -2,6 +2,7 @@ import { Message } from '@/lib/types'
 import { User, Robot } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { MarkdownRenderer } from './MarkdownRenderer'
 
 type MessageBubbleProps = {
   message: Message
@@ -33,15 +34,23 @@ export function MessageBubble({ message, isStreaming = false }: MessageBubblePro
       <div className="flex flex-col gap-1 max-w-3xl">
         <div
           className={cn(
-            'rounded-xl px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words relative',
+            'rounded-xl px-4 py-3 relative',
             isUser
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary text-primary-foreground text-[15px] leading-relaxed whitespace-pre-wrap break-words'
               : 'bg-secondary text-secondary-foreground'
           )}
         >
-          {message.content}
-          {isStreaming && (
-            <span className="inline-block w-[2px] h-[1.1em] bg-accent ml-0.5 animate-pulse" />
+          {isUser ? (
+            <>
+              {message.content}
+            </>
+          ) : (
+            <>
+              <MarkdownRenderer content={message.content} />
+              {isStreaming && (
+                <span className="inline-block w-[2px] h-[1.1em] bg-accent ml-0.5 animate-pulse" />
+              )}
+            </>
           )}
         </div>
         <span className="text-xs text-muted-foreground px-1">

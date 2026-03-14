@@ -34,17 +34,27 @@ This is a chat interface with message history, model selection, and conversation
 - Success criteria: All conversations persist between sessions, can switch between conversations without data loss
 
 **Message History Display**
-- Functionality: Scrollable view of all messages in current conversation with visual distinction between user and AI
-- Purpose: Provides context and allows users to reference previous parts of the conversation
+- Functionality: Scrollable view of all messages in current conversation with visual distinction between user and AI, with rich markdown formatting and syntax highlighting
+- Purpose: Provides context and allows users to reference previous parts of the conversation, with formatted code blocks and styled text for better readability
 - Trigger: Automatic as messages are sent/received
-- Progression: New message → Scrolls into view → Previous messages remain accessible via scroll
-- Success criteria: Messages display in chronological order, user can scroll through full history, timestamps visible
+- Progression: New message → Scrolls into view → Previous messages remain accessible via scroll → Markdown rendered with syntax highlighting
+- Success criteria: Messages display in chronological order with proper markdown formatting (headings, lists, code blocks with syntax highlighting, links, tables, etc.), user can scroll through full history, timestamps visible, code snippets are properly highlighted
+
+**Markdown & Code Rendering**
+- Functionality: AI responses support full markdown formatting including headings, lists, blockquotes, tables, inline code, and multi-language code blocks with syntax highlighting
+- Purpose: Enhances readability of structured responses, especially technical content with code examples
+- Trigger: Automatic when AI response contains markdown syntax
+- Progression: AI response received → Markdown parsed → Code blocks highlighted → Formatted content displayed → Copy button available on code blocks
+- Success criteria: All common markdown syntax renders correctly, code blocks show language indicator and copy button, syntax highlighting works for popular languages, formatting maintains theme consistency
 
 ## Edge Case Handling
 
 - **Empty Message** - Send button disabled until user types content
 - **API Error** - Display friendly error message in chat, allow retry without losing input
-- **Long Response** - Messages wrap and expand container, auto-scroll to bottom
+- **Long Response** - Messages wrap and expand container, auto-scroll to bottom, markdown formatting preserved
+- **Code Blocks** - Long code snippets have horizontal scroll, syntax highlighting active, copy button functional
+- **Invalid Markdown** - Malformed markdown degrades gracefully, displays as plain text without breaking layout
+- **Streaming with Markdown** - Partial markdown renders progressively during streaming without flickering
 - **Model Unavailable** - Gracefully fall back to default model with notification
 - **No Conversations** - Show welcoming empty state with suggestions to start chatting
 - **Rapid Sending** - Disable input while AI is responding to prevent queue buildup
@@ -99,12 +109,15 @@ Animations should create a sense of fluidity and intelligence - responses that f
   - `Separator` for dividing sidebar sections
   - `Dialog` for conversation deletion confirmation
   - `Tooltip` for icon-only buttons
+  - `ReactMarkdown` with `remark-gfm` and `rehype-highlight` for formatted AI responses
   
 - **Customizations**:
   - Custom message bubble component with distinct styling for user vs AI messages
   - Auto-expanding textarea that grows with content up to max height
   - Streaming text component that renders character-by-character with cursor
   - Empty state illustration with prompt suggestions
+  - Custom markdown renderer with themed code blocks, copy buttons, and syntax highlighting
+  - Code block header showing language with copy-to-clipboard functionality
   
 - **States**:
   - Send button: Enabled (vibrant cyan), Disabled (muted gray), Loading (pulsing)
@@ -120,6 +133,8 @@ Animations should create a sense of fluidity and intelligence - responses that f
   - `CaretDown` for model dropdown
   - `Robot` for AI messages
   - `User` for user messages
+  - `Copy` for code block copy button
+  - `Check` for copy success feedback
   
 - **Spacing**:
   - Container padding: `p-6` for main chat area, `p-4` for sidebar
