@@ -5,9 +5,10 @@ import { ConversationSidebar } from './components/ConversationSidebar'
 import { MessageBubble } from './components/MessageBubble'
 import { ChatInput } from './components/ChatInput'
 import { ModelSelector } from './components/ModelSelector'
+import { LoginScreen } from './components/LoginScreen'
 import { ScrollArea } from './components/ui/scroll-area'
 import { Button } from './components/ui/button'
-import { List, Sparkle, DownloadSimple } from '@phosphor-icons/react'
+import { List, Sparkle, DownloadSimple, SignOut } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from './components/ui/sonner'
 import { exportConversationToPDF, exportConversationToExcel, exportConversationToCSV, exportConversationToJSON, extractTextFromFile } from './lib/fileUtils'
@@ -16,9 +17,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from './components/ui/dropdown-menu'
 
 function App() {
+  const [authenticatedEmail, setAuthenticatedEmail] = useKV<string | null>('authenticated-email', null)
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState<ModelType>('gpt-4o')
@@ -235,6 +238,24 @@ function App() {
     toast.success('Conversation exported to JSON')
   }
 
+  const handleLogin = (email: string) => {
+    setAuthenticatedEmail(email)
+  }
+
+  const handleLogout = () => {
+    setAuthenticatedEmail(null)
+    toast.info('Logged out successfully')
+  }
+
+  if (!authenticatedEmail) {
+    return (
+      <>
+        <Toaster />
+        <LoginScreen onLogin={handleLogin} />
+      </>
+    )
+  }
+
   return (
     <div className="flex h-screen bg-background text-foreground">
       <Toaster />
@@ -289,6 +310,29 @@ function App() {
               </DropdownMenu>
             )}
             <ModelSelector selectedModel={selectedModel} onSelectModel={handleModelChange} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                    {authenticatedEmail?.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="max-w-[150px] truncate text-sm text-muted-foreground">
+                    {authenticatedEmail}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="px-2 py-1.5 text-sm">
+                  <p className="text-xs text-muted-foreground">Signed in as</p>
+                  <p className="font-medium">{authenticatedEmail}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                  <SignOut size={16} weight="bold" className="mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
