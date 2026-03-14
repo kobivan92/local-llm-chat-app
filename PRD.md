@@ -40,6 +40,20 @@ This is a chat interface with message history, model selection, and conversation
 - Progression: New message → Scrolls into view → Previous messages remain accessible via scroll → Markdown rendered with syntax highlighting
 - Success criteria: Messages display in chronological order with proper markdown formatting (headings, lists, code blocks with syntax highlighting, links, tables, etc.), user can scroll through full history, timestamps visible, code snippets are properly highlighted
 
+**File Upload & Attachment**
+- Functionality: Upload files (PDF, Word, Excel, CSV, JSON, images) to provide context to the AI in conversations
+- Purpose: Allows users to share documents and data with the AI for analysis, summarization, or questions
+- Trigger: Click attachment button in message input or drag-and-drop files
+- Progression: Select file → Preview shows file name/type → Send with message → AI receives file context → Response references uploaded content
+- Success criteria: Multiple file types supported (PDF, DOCX, XLSX, CSV, JSON, JPG, PNG), file previews display correctly, CSV/JSON content extracted and included in prompt, files persist with conversation
+
+**Conversation Export**
+- Functionality: Export complete conversation history to multiple file formats (PDF, Excel, CSV, JSON)
+- Purpose: Save conversations for later reference, sharing, or archival purposes
+- Trigger: Click Export dropdown in header, select desired format
+- Progression: Click export → Select format → File downloads → Success notification
+- Success criteria: All formats export correctly, formatting preserved in PDF, structured data in CSV/JSON, Excel has proper columns, timestamps included
+
 **Markdown & Code Rendering**
 - Functionality: AI responses support full markdown formatting including headings, lists, blockquotes, tables, inline code, and multi-language code blocks with syntax highlighting
 - Purpose: Enhances readability of structured responses, especially technical content with code examples
@@ -58,6 +72,12 @@ This is a chat interface with message history, model selection, and conversation
 - **Model Unavailable** - Gracefully fall back to default model with notification
 - **No Conversations** - Show welcoming empty state with suggestions to start chatting
 - **Rapid Sending** - Disable input while AI is responding to prevent queue buildup
+- **Large Files** - File size validation, reject files over reasonable limit with clear message
+- **Unsupported File Types** - Clear error message for unsupported formats, show list of accepted types
+- **File Upload Errors** - Retry mechanism for failed uploads, clear error messaging
+- **CSV Parsing** - Handle various CSV formats (different delimiters, encodings), show preview of first rows
+- **JSON Validation** - Validate JSON structure before including in prompt, handle malformed JSON gracefully
+- **Export with Empty Conversation** - Disable export button when no messages exist
 
 ## Design Direction
 
@@ -105,11 +125,12 @@ Animations should create a sense of fluidity and intelligence - responses that f
   - `Button` for send action, new chat, model selector - primary variant for send, ghost for secondary actions
   - `Textarea` for message input - auto-expanding with max height
   - `Card` for message bubbles - subtle shadows and distinct user/AI styling
-  - `DropdownMenu` for model selection - clear visual hierarchy
+  - `DropdownMenu` for model selection and export options - clear visual hierarchy
   - `Separator` for dividing sidebar sections
   - `Dialog` for conversation deletion confirmation
   - `Tooltip` for icon-only buttons
   - `ReactMarkdown` with `remark-gfm` and `rehype-highlight` for formatted AI responses
+  - File input with drag-and-drop for attachments
   
 - **Customizations**:
   - Custom message bubble component with distinct styling for user vs AI messages
@@ -118,12 +139,16 @@ Animations should create a sense of fluidity and intelligence - responses that f
   - Empty state illustration with prompt suggestions
   - Custom markdown renderer with themed code blocks, copy buttons, and syntax highlighting
   - Code block header showing language with copy-to-clipboard functionality
+  - File attachment preview showing file type icon, name, and size
+  - File type badges with color coding (documents, data, images)
   
 - **States**:
   - Send button: Enabled (vibrant cyan), Disabled (muted gray), Loading (pulsing)
   - Message input: Default, Focused (subtle glow), Disabled during response
   - Model selector: Default, Hover (subtle highlight), Active (accent border)
   - Sidebar items: Default, Hover (background shift), Active/Selected (accent indicator)
+  - File attachments: Uploading (progress), Success (checkmark), Error (retry option)
+  - Export button: Enabled when messages exist, Disabled when conversation empty
   
 - **Icon Selection**:
   - `PaperPlaneTilt` for send message
@@ -135,6 +160,9 @@ Animations should create a sense of fluidity and intelligence - responses that f
   - `User` for user messages
   - `Copy` for code block copy button
   - `Check` for copy success feedback
+  - `Paperclip` for file attachment
+  - `DownloadSimple` for export dropdown
+  - `File`, `FileCsv`, `FileJson` for file type indicators
   
 - **Spacing**:
   - Container padding: `p-6` for main chat area, `p-4` for sidebar

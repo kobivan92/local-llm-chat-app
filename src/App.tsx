@@ -10,7 +10,7 @@ import { Button } from './components/ui/button'
 import { List, Sparkle, DownloadSimple } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from './components/ui/sonner'
-import { exportConversationToPDF, exportConversationToExcel, extractTextFromFile } from './lib/fileUtils'
+import { exportConversationToPDF, exportConversationToExcel, exportConversationToCSV, exportConversationToJSON, extractTextFromFile } from './lib/fileUtils'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -223,6 +223,18 @@ function App() {
     toast.success('Conversation exported to Excel')
   }
 
+  const handleExportCSV = () => {
+    if (!currentConversation) return
+    exportConversationToCSV(currentConversation.title, currentConversation.messages)
+    toast.success('Conversation exported to CSV')
+  }
+
+  const handleExportJSON = () => {
+    if (!currentConversation) return
+    exportConversationToJSON(currentConversation.title, currentConversation.messages)
+    toast.success('Conversation exported to JSON')
+  }
+
   return (
     <div className="flex h-screen bg-background text-foreground">
       <Toaster />
@@ -266,6 +278,12 @@ function App() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExportExcel}>
                     Export as Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportCSV}>
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportJSON}>
+                    Export as JSON
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
