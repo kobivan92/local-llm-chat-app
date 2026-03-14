@@ -1,14 +1,16 @@
 import { useState, KeyboardEvent, useRef, useEffect } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { PaperPlaneTilt } from '@phosphor-icons/react'
+import { PaperPlaneTilt, Stop } from '@phosphor-icons/react'
 
 type ChatInputProps = {
   onSendMessage: (content: string) => void
+  onStopStreaming?: () => void
   disabled?: boolean
+  isStreaming?: boolean
 }
 
-export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
+export function ChatInput({ onSendMessage, onStopStreaming, disabled, isStreaming }: ChatInputProps) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -52,14 +54,25 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
           rows={1}
           className="min-h-[48px] max-h-[200px] resize-none text-[15px] leading-relaxed"
         />
-        <Button
-          onClick={handleSend}
-          disabled={!input.trim() || disabled}
-          size="icon"
-          className="h-12 w-12 shrink-0 bg-accent text-accent-foreground hover:bg-accent/90"
-        >
-          <PaperPlaneTilt size={20} weight="fill" />
-        </Button>
+        {isStreaming ? (
+          <Button
+            onClick={onStopStreaming}
+            size="icon"
+            variant="destructive"
+            className="h-12 w-12 shrink-0"
+          >
+            <Stop size={20} weight="fill" />
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSend}
+            disabled={!input.trim() || disabled}
+            size="icon"
+            className="h-12 w-12 shrink-0 bg-accent text-accent-foreground hover:bg-accent/90"
+          >
+            <PaperPlaneTilt size={20} weight="fill" />
+          </Button>
+        )}
       </div>
     </div>
   )

@@ -20,6 +20,7 @@ function App() {
   const [streamingContent, setStreamingContent] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const streamIntervalRef = useRef<number | null>(null)
 
   const safeConversations = conversations || []
   const currentConversation = safeConversations.find((c) => c.id === currentConversationId)
@@ -47,6 +48,39 @@ function App() {
     }
     setConversations((prev) => [newConv, ...(prev || [])])
     setCurrentConversationId(newConv.id)
+  }
+
+  const stopStreaming = () => {
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current)
+      streamIntervalRef.current = null
+    }
+
+    if (streamingContent) {
+      const assistantMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: streamingContent,
+        timestamp: Date.now(),
+      }
+
+      setConversations((prev) =>
+        (prev || []).map((conv) =>
+          conv.id === currentConversationId
+            ? {
+                ...conv,
+                messages: [...conv.messages, assistantMessage],
+                updatedAt: Date.now(),
+              }
+            : conv
+        )
+      )
+    }
+
+    setStreamingContent('')
+    setIsStreaming(false)
+    setIsLoading(false)
+    toast.info('Response stopped')
   }
 
   const handleSendMessage = async (content: string) => {
@@ -95,6 +129,7 @@ function App() {
           currentIndex += charsToAdd
         } else {
           clearInterval(streamInterval)
+          streamIntervalRef.current = null
           
           const assistantMessage: Message = {
             id: crypto.randomUUID(),
@@ -120,6 +155,8 @@ function App() {
           setIsLoading(false)
         }
       }, 20)
+      
+      streamIntervalRef.current = streamInterval as unknown as number
     } catch (error) {
       toast.error('Failed to get response. Please try again.')
       console.error('LLM Error:', error)
@@ -223,7 +260,12 @@ function App() {
           </div>
         </ScrollArea>
 
-        <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
+        <ChatInput 
+          onSendMessage={handleSendMessage} 
+          onStopStreaming={stopStreaming}
+          disabled={isLoading && !isStreaming} 
+          isStreaming={isStreaming}
+        />
       </div>
     </div>
   )
