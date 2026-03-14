@@ -1,8 +1,17 @@
+export type FileAttachment = {
+  id: string
+  name: string
+  type: string
+  size: number
+  data: string
+}
+
 export type Message = {
   id: string
   role: 'user' | 'assistant'
   content: string
   timestamp: number
+  attachments?: FileAttachment[]
 }
 
 export type Conversation = {

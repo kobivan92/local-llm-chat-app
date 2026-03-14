@@ -1,15 +1,22 @@
 import { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Conversation, Message, ModelType } from './lib/types'
+import { Conversation, Message, ModelType, FileAttachment } from './lib/types'
 import { ConversationSidebar } from './components/ConversationSidebar'
 import { MessageBubble } from './components/MessageBubble'
 import { ChatInput } from './components/ChatInput'
 import { ModelSelector } from './components/ModelSelector'
 import { ScrollArea } from './components/ui/scroll-area'
 import { Button } from './components/ui/button'
-import { List, Sparkle } from '@phosphor-icons/react'
+import { List, Sparkle, DownloadSimple } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from './components/ui/sonner'
+import { exportConversationToPDF, exportConversationToExcel, extractTextFromFile } from './lib/fileUtils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './components/ui/dropdown-menu'
 
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
@@ -83,18 +90,37 @@ function App() {
     toast.info('Response stopped')
   }
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, attachments?: FileAttachment[]) => {
     if (!currentConversationId) {
       createNewConversation()
-      setTimeout(() => handleSendMessage(content), 100)
+      setTimeout(() => handleSendMessage(content, attachments), 100)
       return
+    }
+
+    let enrichedContent = content
+    
+    if (attachments && attachments.length > 0) {
+      const fileDescriptions = await Promise.all(
+        attachments.map(async (attachment) => {
+          const blob = new Blob([Uint8Array.from(atob(attachment.data), c => c.charCodeAt(0))], { type: attachment.type })
+          const file = new File([blob], attachment.name, { type: attachment.type })
+          return await extractTextFromFile(file)
+        })
+      )
+      
+      if (content) {
+        enrichedContent = `${content}\n\n${fileDescriptions.join('\n')}`
+      } else {
+        enrichedContent = fileDescriptions.join('\n')
+      }
     }
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: 'user',
-      content,
+      content: enrichedContent,
       timestamp: Date.now(),
+      attachments,
     }
 
     setConversations((prev) =>
@@ -118,7 +144,7 @@ function App() {
     setIsStreaming(true)
 
     try {
-      const prompt = window.spark.llmPrompt([content], content)
+      const prompt = window.spark.llmPrompt([enrichedContent], enrichedContent)
       const response = await window.spark.llm(prompt, selectedModel)
 
       let currentIndex = 0
@@ -185,6 +211,18 @@ function App() {
     }
   }
 
+  const handleExportPDF = () => {
+    if (!currentConversation) return
+    exportConversationToPDF(currentConversation.title, currentConversation.messages)
+    toast.success('Conversation exported to PDF')
+  }
+
+  const handleExportExcel = () => {
+    if (!currentConversation) return
+    exportConversationToExcel(currentConversation.title, currentConversation.messages)
+    toast.success('Conversation exported to Excel')
+  }
+
   return (
     <div className="flex h-screen bg-background text-foreground">
       <Toaster />
@@ -213,7 +251,27 @@ function App() {
               <h1 className="text-2xl font-bold tracking-tight">AI Chat</h1>
             </div>
           </div>
-          <ModelSelector selectedModel={selectedModel} onSelectModel={handleModelChange} />
+          <div className="flex items-center gap-3">
+            {currentConversation && currentConversation.messages.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <DownloadSimple size={16} weight="bold" className="mr-2" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportPDF}>
+                    Export as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportExcel}>
+                    Export as Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            <ModelSelector selectedModel={selectedModel} onSelectModel={handleModelChange} />
+          </div>
         </header>
 
         <ScrollArea className="flex-1" ref={scrollRef}>

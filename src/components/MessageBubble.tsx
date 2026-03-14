@@ -3,6 +3,7 @@ import { User, Robot } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { MarkdownRenderer } from './MarkdownRenderer'
+import { FileAttachmentItem } from './FileAttachmentItem'
 
 type MessageBubbleProps = {
   message: Message
@@ -31,28 +32,37 @@ export function MessageBubble({ message, isStreaming = false }: MessageBubblePro
           <Robot size={20} weight="duotone" className="text-secondary-foreground" />
         )}
       </div>
-      <div className="flex flex-col gap-1 max-w-3xl">
-        <div
-          className={cn(
-            'rounded-xl px-4 py-3 relative',
-            isUser
-              ? 'bg-primary text-primary-foreground text-[15px] leading-relaxed whitespace-pre-wrap break-words'
-              : 'bg-secondary text-secondary-foreground'
-          )}
-        >
-          {isUser ? (
-            <>
-              {message.content}
-            </>
-          ) : (
-            <>
-              <MarkdownRenderer content={message.content} />
-              {isStreaming && (
-                <span className="inline-block w-[2px] h-[1.1em] bg-accent ml-0.5 animate-pulse" />
-              )}
-            </>
-          )}
-        </div>
+      <div className="flex flex-col gap-2 max-w-3xl">
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {message.attachments.map((attachment) => (
+              <FileAttachmentItem key={attachment.id} attachment={attachment} />
+            ))}
+          </div>
+        )}
+        {message.content && (
+          <div
+            className={cn(
+              'rounded-xl px-4 py-3 relative',
+              isUser
+                ? 'bg-primary text-primary-foreground text-[15px] leading-relaxed whitespace-pre-wrap break-words'
+                : 'bg-secondary text-secondary-foreground'
+            )}
+          >
+            {isUser ? (
+              <>
+                {message.content}
+              </>
+            ) : (
+              <>
+                <MarkdownRenderer content={message.content} />
+                {isStreaming && (
+                  <span className="inline-block w-[2px] h-[1.1em] bg-accent ml-0.5 animate-pulse" />
+                )}
+              </>
+            )}
+          </div>
+        )}
         <span className="text-xs text-muted-foreground px-1">
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: '2-digit',
