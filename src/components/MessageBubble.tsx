@@ -5,9 +5,10 @@ import { motion } from 'framer-motion'
 
 type MessageBubbleProps = {
   message: Message
+  isStreaming?: boolean
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
   const isUser = message.role === 'user'
   
   return (
@@ -32,13 +33,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       <div className="flex flex-col gap-1 max-w-3xl">
         <div
           className={cn(
-            'rounded-xl px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words',
+            'rounded-xl px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words relative',
             isUser
               ? 'bg-primary text-primary-foreground'
               : 'bg-secondary text-secondary-foreground'
           )}
         >
           {message.content}
+          {isStreaming && (
+            <span className="inline-block w-[2px] h-[1.1em] bg-accent ml-0.5 animate-pulse" />
+          )}
         </div>
         <span className="text-xs text-muted-foreground px-1">
           {new Date(message.timestamp).toLocaleTimeString([], {

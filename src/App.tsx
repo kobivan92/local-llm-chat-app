@@ -17,6 +17,8 @@ function App() {
   const [selectedModel, setSelectedModel] = useState<ModelType>('gpt-4o')
   const [isLoading, setIsLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [streamingContent, setStreamingContent] = useState('')
+  const [isStreaming, setIsStreaming] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const safeConversations = conversations || []
@@ -32,7 +34,7 @@ function App() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [currentConversation?.messages])
+  }, [currentConversation?.messages, streamingContent])
 
   const createNewConversation = () => {
     const newConv: Conversation = {
@@ -78,33 +80,51 @@ function App() {
     )
 
     setIsLoading(true)
+    setStreamingContent('')
+    setIsStreaming(true)
 
     try {
       const prompt = window.spark.llmPrompt([content], content)
       const response = await window.spark.llm(prompt, selectedModel)
 
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: response,
-        timestamp: Date.now(),
-      }
+      let currentIndex = 0
+      const streamInterval = setInterval(() => {
+        if (currentIndex < response.length) {
+          const charsToAdd = Math.min(3, response.length - currentIndex)
+          setStreamingContent((prev) => prev + response.slice(currentIndex, currentIndex + charsToAdd))
+          currentIndex += charsToAdd
+        } else {
+          clearInterval(streamInterval)
+          
+          const assistantMessage: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: response,
+            timestamp: Date.now(),
+          }
 
-      setConversations((prev) =>
-        (prev || []).map((conv) =>
-          conv.id === currentConversationId
-            ? {
-                ...conv,
-                messages: [...conv.messages, assistantMessage],
-                updatedAt: Date.now(),
-              }
-            : conv
-        )
-      )
+          setConversations((prev) =>
+            (prev || []).map((conv) =>
+              conv.id === currentConversationId
+                ? {
+                    ...conv,
+                    messages: [...conv.messages, assistantMessage],
+                    updatedAt: Date.now(),
+                  }
+                : conv
+            )
+          )
+          
+          setStreamingContent('')
+          setIsStreaming(false)
+          setIsLoading(false)
+        }
+      }, 20)
     } catch (error) {
       toast.error('Failed to get response. Please try again.')
       console.error('LLM Error:', error)
-    } finally {
+      setStreamingContent('')
+      setIsStreaming(false)
       setIsLoading(false)
     }
   }
@@ -174,7 +194,7 @@ function App() {
                 {currentConversation.messages.map((message) => (
                   <MessageBubble key={message.id} message={message} />
                 ))}
-                {isLoading && (
+                {isLoading && !isStreaming && (
                   <div className="flex gap-3 px-4 py-4">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
                       <Sparkle size={20} weight="duotone" className="text-secondary-foreground animate-pulse" />
@@ -185,6 +205,18 @@ function App() {
                       <div className="h-2 w-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
+                )}
+                {isStreaming && streamingContent && (
+                  <MessageBubble 
+                    key="streaming" 
+                    message={{
+                      id: 'streaming',
+                      role: 'assistant',
+                      content: streamingContent,
+                      timestamp: Date.now(),
+                    }}
+                    isStreaming={true}
+                  />
                 )}
               </div>
             )}
